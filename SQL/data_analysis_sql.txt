@@ -1,0 +1,291 @@
+# --------------------------------------- Data Analysis using SQL ------------------------------------------
+
+The following analysis is done on the bike share data using PostgreSQL.
+
+
+# For table bike_share_yr_0
+
+
+1. Total Number of Riders:
+
+SELECT SUM(riders) AS total_riders
+FROM bike_share_yr_0;
+
+
+output - 1243103
+
+_____________________________________________________________________________________________________________________
+
+2. Average Temperature and Humidity by Season:
+
+SELECT season, 
+		ROUND(AVG(temp)::numeric, 2) AS avg_temp, 
+        ROUND(AVG(hum)::numeric, 2) AS avg_humidity
+FROM bike_share_yr_0
+GROUP BY season;
+
+
+output:
+
+"season"  "avg_temperature"	"avg_humidity"
+1	 0.27534816247582283	0.574622823984525
+3	 0.7013392857142671	0.6441250000000017
+4	 0.426354264292408	0.6940159325210857
+2	 0.5346073536087047	0.6583113935542487
+
+___________________________________________________________________________
+
+3. Total number of Riders according to Month:
+
+SELECT mnth, SUM(riders)
+FROM bike_share_yr_0
+GROUP BY mnth
+ORDER BY mnth;
+
+output:
+
+"mnth"	"total_riders"
+1	38189
+2	48215
+3	64045
+4	94870
+5	135821
+6	143512
+7	141341
+8	136691
+9	127418
+10	123511
+11	102167
+12	87323
+
+___________________________________________________________________________
+
+4. Riders Count on Weekdays vs. Weekends:
+
+SELECT 
+    SUM(CASE WHEN weekday BETWEEN 1 AND 5 THEN 1 END) AS weekday_count,
+    SUM(CASE WHEN weekday IN (6, 7) THEN 1 END) AS weekend_count
+FROM bike_share_yr_0;
+
+
+output:
+
+"weekday_count"	 "weekend_count"
+  12300	            2528
+
+___________________________________________________________________________
+
+5. Correlation Between Temperature and Number of Riders:
+
+SELECT CORR(temp, riders) AS temp_riders_correlation
+FROM bike_share_yr_0;
+
+output:
+
+"temp_riders_correlation"
+   0.3251370900541256
+
+
+___________________________________________________________________________
+
+6. Number of Riders by Rider Type (Casual vs. Registered):
+
+SELECT rider_type, SUM(riders) AS total_riders
+FROM bike_share_yr_0
+GROUP BY rider_type;
+
+Output:
+
+"rider_type"	"total_riders"
+"registered"	995851
+"casual"	247252
+
+
+___________________________________________________________________________
+
+6. Distribution of Riders by Temperature Ranges:
+
+SELECT CASE
+         WHEN temp BETWEEN 0 AND 0.2 THEN '0-0.2'
+         WHEN temp BETWEEN 0.2 AND 0.4 THEN '0.2-0.4'
+         WHEN temp BETWEEN 0.4 AND 0.6 THEN '0.4-0.6'
+         ELSE '0.6+'
+       END AS temp_range,
+       SUM(riders) AS total_riders
+FROM bike_share_yr_0
+GROUP BY temp_range;
+
+Output:
+
+"temp_range"	"total_riders"
+"0.4-0.6"	364770
+"0.2-0.4"	236953
+"0.6+"		604203
+"0-0.2"		37177
+
+___________________________________________________________________________
+
+7. Comparison of Rider Counts Between Working Days and Non-Working Days by Hour:
+
+SELECT hr, workingday, ROUND(AVG(riders),2) AS avg_riders
+FROM bike_share_yr_0
+GROUP BY hr, workingday
+ORDER BY hr, workingday
+LIMIT 10;
+
+Output:
+
+"hr" 	"workingday"	"avg_riders"
+0	0		36.39
+0	1		14.66
+1	0		27.11
+1	1		6.86	
+2	0		21.53
+2	1		3.76
+3	0		10.80
+3	1		2.18
+4	0		3.32
+4	1		2.39
+
+___________________________________________________________________________
+
+
+# Combining both Tables
+
+
+1. Combine Data from Two Years and Compare Total Riders:
+
+SELECT yr, SUM(riders) AS total_riders
+FROM (
+    SELECT riders, yr FROM bike_share_yr_0
+    UNION ALL
+    SELECT riders, yr FROM bike_share_yr_1
+) combined_data
+GROUP BY yr
+ORDER BY yr;
+
+
+Output:
+
+"yr"	"total_riders"
+0	1243103
+1	2049576
+
+___________________________________________________________________________
+
+2. Compare Average Temperature and Humidity Between Two Years:
+
+SELECT yr, ROUND(AVG(temp)::numeric ,2) AS avg_temp, ROUND(AVG(hum)::numeric ,2) AS avg_humidity
+FROM (
+    SELECT temp, hum, yr FROM bike_share_yr_0
+    UNION ALL
+    SELECT temp, hum, yr FROM bike_share_yr_1
+) combined_data
+GROUP BY yr
+ORDER BY yr;
+
+
+Output:
+"yr"	"avg_temp"   "avg_humidity"
+0	0.49		 0.64
+1	0.50		 0.61
+
+___________________________________________________________________________
+
+3. Comparison of Average Number of Riders by Hour Across Two Years:
+
+SELECT hr, yr, ROUND(AVG(riders),2) AS avg_riders
+FROM (
+    SELECT hr, riders, yr FROM bike_share_yr_0
+    UNION ALL
+    SELECT hr, riders, yr FROM bike_share_yr_1
+) combined_data
+GROUP BY hr, yr
+ORDER BY hr, yr
+LIMIT 10;
+
+
+Output:
+
+"hr"	"yr"	"avg_riders"
+0	0	21.52
+0	1	32.32
+1	0	13.28
+1	1	20.06
+2	0	9.46
+2	1	13.35
+3	0	5.03
+3	1	6.67
+4	0	2.70
+4	1	3.63
+
+___________________________________________________________________________
+
+4. Comparison of Rider Counts by Weather Situation Across Two Years:
+
+SELECT weathersit, yr, SUM(riders) AS total_riders
+FROM (
+    SELECT weathersit, riders, yr FROM bike_share_yr_0
+    UNION ALL
+    SELECT weathersit, riders, yr FROM bike_share_yr_1
+) combined_data
+GROUP BY weathersit, yr
+ORDER BY weathersit, yr;
+
+Output:
+
+"weathersit"	"yr"	"total_riders"
+1		0	875053
+1		1	1463120
+2		0	300519
+2		1	495433
+3		0	67495
+3		1	90836
+4		0	36
+4		1	187
+
+___________________________________________________________________________
+
+5. Calculating the total number of riders and the average number of riders for weekdays and weekends for each year
+
+SELECT
+    period,
+    yr,
+    COUNT(*) AS total_records,
+    ROUND(AVG(riders)::numeric, 2) AS avg_riders
+FROM (
+    SELECT
+        CASE 
+            WHEN weekday BETWEEN 1 AND 5 THEN 'Weekday'
+            WHEN weekday IN (6, 7) THEN 'Weekend'
+            ELSE NULL
+        END AS period,
+        riders,
+        yr
+    FROM bike_share_yr_0
+    UNION ALL
+    SELECT
+        CASE 
+            WHEN weekday BETWEEN 1 AND 5 THEN 'Weekday'
+            WHEN weekday IN (6, 7) THEN 'Weekend'
+            ELSE NULL
+        END AS period,
+        riders,
+        yr
+    FROM bike_share_yr_1
+) combined_data
+WHERE period IS NOT NULL
+GROUP BY period, yr
+ORDER BY yr, period;
+
+
+Output:
+
+"period"	"yr"	"total_records"	"avg_riders"
+"Weekday"	0	12300		72.06
+"Weekend"	0	2528		71.10
+"Weekday"	1	12430		119.43
+"Weekend"	1	2496		119.42
+___________________________________________________________________________
+
+

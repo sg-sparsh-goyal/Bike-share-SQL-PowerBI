@@ -1,0 +1,79 @@
+SELECT * FROM bike_share_yr_0
+union all
+SELECT * FROM bike_share_yr_1
+
+--------------------------------------------------
+
+with cte as (
+	SELECT * FROM bike_share_yr_0
+	union all
+	SELECT * FROM bike_share_yr_1
+)
+
+SELECT * FROM cte
+
+
+--------------------------------------------------
+
+with cte as (
+	SELECT * FROM bike_share_yr_0
+	union all
+	SELECT * FROM bike_share_yr_1
+)
+
+SELECT * FROM cte AS a
+left join cost_table AS b
+ON a.yr = b.yr
+
+--------------------------------------------------
+
+
+
+with cte as (
+	SELECT * FROM bike_share_yr_0
+	union all
+	SELECT * FROM bike_share_yr_1
+)
+
+SELECT 
+dteday, 
+season,
+a.yr,
+weekday,
+hr,
+rider_type,
+riders,
+price,
+cogs	
+FROM cte AS a
+left join cost_table AS b
+ON a.yr = b.yr
+
+--------------------------------------------------
+
+
+with cte as (
+	SELECT * FROM bike_share_yr_0
+	union all
+	SELECT * FROM bike_share_yr_1
+)
+
+SELECT 
+	dteday, 
+	season,
+	a.yr,
+	weekday,
+	hr,
+	rider_type,
+	riders,
+	price,
+	cogs,
+	riders*price AS revenue,
+	riders*price - cogs AS profit
+
+FROM cte AS a
+left join cost_table AS b
+ON a.yr = b.yr
+
+--------------------------------------------------
+
